@@ -1,15 +1,10 @@
-from dotenv import load_dotenv
-import os
-
 from framework.services.service_factory import BaseServiceFactory
 from app.services.login import LoginService
+import dotenv, os
 
-
-SPOTIFY_URL = "http://127.0.0.1:8080"
-USER_URL = "http://127.0.0.1:8088"
-
-# Load environment variables from .env file
-load_dotenv()
+dotenv.load_dotenv()
+spotify_url = os.getenv('SPOTIFY_URL')
+user_url = os.getenv('USER_URL')
 
 class ServiceFactory(BaseServiceFactory):
 
@@ -21,7 +16,7 @@ class ServiceFactory(BaseServiceFactory):
 
         match service_name:
             case "Login":
-                result = LoginService(spotify_adapter_url=SPOTIFY_URL, user_url=USER_URL)
+                result = LoginService(spotify_adapter_url=spotify_url, user_url=user_url)
 
             case _:
                 result = None
