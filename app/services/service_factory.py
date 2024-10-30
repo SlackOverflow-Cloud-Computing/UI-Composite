@@ -16,14 +16,22 @@ class ServiceFactory(BaseServiceFactory):
     @classmethod
     def get_service(cls, service_name):
 
-        match service_name:
-            case "Login":
-                result = LoginService(spotify_adapter_url=spotify_url, user_url=user_url)
+        """Change 'match' to 'if_else' to be compatible with EC2 python version"""
+        # match service_name:
+        #     case "Login":
+        #         result = LoginService(spotify_adapter_url=spotify_url, user_url=user_url)
+        #
+        #     case "Playlist":
+        #         result = PlaylistService(spotify_adapter_url=spotify_url, playlist_url=playlist_url)
+        #
+        #     case _:
+        #         result = None
 
-            case "Playlist":
-                result = PlaylistService(spotify_adapter_url=spotify_url, playlist_url=playlist_url)
-
-            case _:
-                result = None
+        if service_name == "Login":
+            result = LoginService(spotify_adapter_url=spotify_url, user_url=user_url)
+        elif service_name == "Playlist":
+            result = PlaylistService(spotify_adapter_url=spotify_url, playlist_url=playlist_url)
+        else:
+            result = None
 
         return result
