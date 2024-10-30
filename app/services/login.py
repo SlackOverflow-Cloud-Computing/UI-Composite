@@ -25,7 +25,7 @@ class LoginService:
 
             # Pass user and token response to the User service
             data = response.json()
-            current_data = requests.post(f"{self.user_url}/update_user", json=data)
+            current_data = requests.put(f"{self.user_url}/update_user", json=data)
 
             # Try to parse the response into a User model
             user = User.parse_obj(current_data.json())

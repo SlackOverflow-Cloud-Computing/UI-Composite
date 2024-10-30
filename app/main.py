@@ -1,8 +1,10 @@
+import logging
 from fastapi import Depends, FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import composite
+from app.routers import users
+from app.routers import playlists
 
 app = FastAPI()
 
@@ -20,7 +22,8 @@ app.add_middleware(
 
 
 
-app.include_router(composite.router)
+app.include_router(users.router)
+app.include_router(playlists.router)
 
 
 @app.get("/")
