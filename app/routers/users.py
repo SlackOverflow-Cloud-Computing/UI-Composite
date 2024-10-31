@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from app.models.user import User  # CourseSection
@@ -11,7 +11,7 @@ router = APIRouter()
 class LoginRequest(BaseModel):
     auth_code: str
 
-@router.post("/login", tags=["users"])
+@router.post("/login", tags=["users"], status_code=status.HTTP_201_CREATED)
 async def login(request: LoginRequest):
     """Uses Spotify Auth Code to Login User
 
