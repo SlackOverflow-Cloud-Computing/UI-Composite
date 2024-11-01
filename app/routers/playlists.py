@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 from typing import Optional
 
@@ -10,7 +10,7 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter()
 
 
-@router.get("playlists/{playlist_id}", tags=["playlists"])
+@router.get("playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def get_playlist(playlist_id: str, include_tracks: Optional[bool] = Query(False)):
     """ Get playlist details from Spotify and merge with our own data
 
@@ -38,7 +38,7 @@ async def get_playlist(playlist_id: str, include_tracks: Optional[bool] = Query(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/update_playlist", tags=["playlists"])
+@router.put("/update_playlist", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
 async def update_playlist(request: Playlist):
     """ Update a playlist with new data
 
