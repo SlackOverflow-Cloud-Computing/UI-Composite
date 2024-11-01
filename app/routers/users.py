@@ -37,3 +37,25 @@ async def login(request: LoginRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/users/{user_id}", tags=["users"])
+async def get_user(user_id: str):
+    """Gets a User's Public Information"""
+
+    logger.info(f"Incoming Request - Method: GET, Path: /users/{user_id}")
+    user_service = ServiceFactory.get_service("User")
+
+    try:
+        # Get details from Spotify integration service
+        user = user_service.get_user(user_id)
+        logger.debug(f"User info: {user}")
+        if not user:
+            logger.error(f"Failed to get user info for {user_id}")
+            raise HTTPException(status_code=400, detail="User does not use Subwoofer")
+
+        logger.info(f"Response - Method: GET, Path: /users/{user_id}, Status: 200, Body: {user.dict()}")
+        return user
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
