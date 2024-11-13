@@ -1,5 +1,5 @@
 from framework.services.service_factory import BaseServiceFactory
-from app.services.login import LoginService
+from app.services.user import UserService
 from app.services.playlist import PlaylistService
 import dotenv, os
 
@@ -27,8 +27,8 @@ class ServiceFactory(BaseServiceFactory):
         #     case _:
         #         result = None
 
-        if service_name == "Login":
-            result = LoginService(spotify_adapter_url=spotify_url, user_url=user_url)
+        if service_name == "User":
+            result = UserService(spotify_adapter_url=spotify_url, user_url=user_url)
         elif service_name == "Playlist":
             result = PlaylistService(spotify_adapter_url=spotify_url, playlist_url=playlist_url)
         else:

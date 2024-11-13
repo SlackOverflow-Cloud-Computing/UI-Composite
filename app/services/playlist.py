@@ -15,4 +15,14 @@ class PlaylistService:
         pass
 
     def update_playlist(self, playlist: Playlist):
+        # new commit
+        pass
+
+    def delete_playlist(self, playlist_id: str):
+        pass
+
+    def create_branch(self, branch_id: str):
+        pass
+
+    def set_branch(self, branch_id: str):
         pass

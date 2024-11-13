@@ -21,12 +21,12 @@ async def login(request: LoginRequest):
 
     logger.info(f"Incoming Request - Method: POST, Path: /login, Body: {request.dict()}")
     auth_code = request.auth_code
-    login = ServiceFactory.get_service("Login")
+    user_service = ServiceFactory.get_service("User")
 
     try:
 
         # Get details from Spotify integration service
-        user = login.get_user_info(auth_code)
+        user = user_service.login(auth_code)
         logger.debug(f"User info received: {user}")
         if not user:
             logger.error(f"Login failed for auth_code: {auth_code}")
@@ -56,6 +56,34 @@ async def get_user(user_id: str):
 
         logger.info(f"Response - Method: GET, Path: /users/{user_id}, Status: 200, Body: {user.dict()}")
         return user
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/users/{user_id}/playlists", tags=["users"])
+async def get_user_playlists(user_id: str):
+    """Gets a User's Playlists
+
+    TODO: Optional authentication to get private playlists
+
+    Checks information from Spotify and updates our database behind
+    the scenes with the latest information.
+    """
+
+    logger.info(f"Incoming Request - Method: GET, Path: /users/{user_id}/playlists")
+    user_service = ServiceFactory.get_service("User")
+
+    try:
+        # Get details from Spotify integration service
+        playlists = user_service.get_user_playlists(user_id)
+        logger.debug(f"User playlists: {playlists}")
+        if not playlists:
+            logger.error(f"Failed to get playlists for user {user_id}")
+            raise HTTPException(status_code=400, detail="User does not have any playlists")
+
+        logger.info(f"Response - Method: GET, Path: /users/{user_id}/playlists, Status: 200, Body: {playlists}")
+        return playlists
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
