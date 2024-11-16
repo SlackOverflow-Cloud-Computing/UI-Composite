@@ -5,7 +5,6 @@ import time
 
 from pydantic import ValidationError, parse_obj_as
 import jwt
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 from app.models.user import User
 from app.models.playlist import Playlist
@@ -38,6 +37,19 @@ class UserService:
         except RequestException as e:
             logging.error(f"Login failed for auth_code {auth_code}: {e}")
             return None
+
+    def get_user_id(self, token: str) -> Optional[str]:
+        try:
+            # Decode the JWT to get the user ID
+            payload = jwt.decode(token, verify=False)
+            return payload.get('user_id')
+
+        except jwt.ExpiredSignatureError:
+            logging.error(f"JWT expired: {jwt}")
+            return None
+
+        except jwt.InvalidTokenError:
+            logging.error(f"Invalid JWT: {jwt}")
 
     def get_user(self, user_id: str) -> Optional[User]:
         try:
