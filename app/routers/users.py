@@ -48,11 +48,10 @@ async def get_user(token: str = Depends(oauth2_scheme)):
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
-    user_id = user_service.get_user_id(token)
 
     try:
-        # Get details from Spotify integration service
-        user = user_service.get_user(user_id)
+        # Get the user's information in the database
+        user = user_service.get_user(token)
         logger.debug(f"User info: {user}")
         if not user:
             logger.error(f"Failed to get user info")
@@ -76,11 +75,10 @@ async def get_user_playlists(token: str = Depends(oauth2_scheme)):
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me/playlists")
     user_service = ServiceFactory.get_service("User")
-    user_id = user_service.get_user_id(token)
 
     try:
         # Get details from Spotify integration service
-        playlists = user_service.get_user_playlists(user_id)
+        playlists = user_service.get_user_playlists(token)
         logger.debug(f"User playlists: {playlists}")
         if not playlists:
             logger.error(f"Failed to get playlists for user {user_id}")
