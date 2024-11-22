@@ -26,11 +26,11 @@ class UserService:
 
         try:
             # Exchange the auth code for user info from the Spotify integration service
-            response = self._make_request('POST', f"{self.spotify_url}/login", json=payload)
+            response = self._make_request('POST', f"{self.spotify_url}/login", token="", json=payload)
             data = response.json()
 
             # Update the user in the User service
-            updated_response = self._make_request('PUT', f"{self.user_url}/update_user", json=data)
+            updated_response = self._make_request('PUT', f"{self.user_url}/update_user", token="", json=data)
             user = User.parse_obj(updated_response.json())
             return user
 
@@ -117,9 +117,10 @@ class UserService:
     def _make_request(self, method: str, url: str, token:str, **kwargs) -> requests.Response:
         try:
             # Add the JWT to the request headers
-            headers = kwargs.get('headers', {})
-            headers['Authorization'] = f"Bearer {token}"
-            kwargs['headers'] = headers
+            if token:
+                headers = kwargs.get('headers', {})
+                headers['Authorization'] = f"Bearer {token}"
+                kwargs['headers'] = headers
 
             response = requests.request(method, url, **kwargs)
             response.raise_for_status()
