@@ -41,7 +41,7 @@ class UserService:
     def get_user_id(self, token: str) -> Optional[str]:
         try:
             # Decode the JWT to get the user ID
-            payload = jwt.decode(token, verify=False)
+            payload = jwt.decode(token, algorithms=['HS256'])
             return payload.get('user_id')
 
         except jwt.ExpiredSignatureError:
