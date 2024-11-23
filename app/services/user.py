@@ -10,6 +10,8 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from app.models.user import User
 from app.models.playlist import Playlist
 
+from requests import Response, RequestException
+
 UPDATE_FREQUENCY = 300  # seconds -> 5 minutes
 
 
