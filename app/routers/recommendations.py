@@ -18,9 +18,15 @@ async def query_to_recommendations(query: str) -> List[Song]:
     logger.info(f"Incoming Request - Method: POST, Path: /recommendations")
     chat_service = ServiceFactory.get_service("Chat")
     recommendation_service = ServiceFactory.get_service("Recommendation")
-    query = Message(query=query)
-    
+    # query = Message(query=query)
+    query = Message(**{
+        "query": query,
+        "role": "human",
+        "agent_name": "recommendation"
+    })
+
     try:
+        chat_service.update_chat_database(query)
         result = chat_service.extract_song_traits(query)
         logger.debug(f"Got song traits: {result}")
         result = recommendation_service.get_recommendations(result)

@@ -7,6 +7,10 @@ from typing import Optional, List
 # https://fastapi.tiangolo.com/tutorial/body/
 class Message(BaseModel):
     query: str
+    role: Optional[str] = None
+    chat_id: Optional[str] = None
+    agent_name: Optional[str] = None
+
     
     class Config:
         json_schema_extra = {
@@ -14,3 +18,12 @@ class Message(BaseModel):
                 "query": "Fast paced country music."
             }
         }
+
+class ChatData(BaseModel):
+    chat_id: Optional[str] = None
+    role: Optional[str] = None
+    content: Optional[str] = None
+    user_id: Optional[str] = None
+    user_name: Optional[str] = None
+    agent_id: Optional[str] = None
+    agent_name: Optional[str] = None

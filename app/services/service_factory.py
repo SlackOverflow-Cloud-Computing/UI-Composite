@@ -35,7 +35,7 @@ class ServiceFactory(BaseServiceFactory):
         elif service_name == "Playlist":
             result = PlaylistService(spotify_adapter_url=spotify_url, playlist_url=playlist_url)
         elif service_name == "Chat":
-            result = ChatService(chat_url=chat_url)
+            result = ChatService(chat_url=chat_url, user_url=user_url)
         elif service_name == "Recommendation":
             result = RecommandationService(spotify_adapter_url=spotify_url)
         else:
