@@ -16,7 +16,7 @@ class ChatService:
         self.chat_url = chat_url
         self.user_url = user_url
 
-    def update_chat_database(self, query: Message):
+    def update_chat_database(self, query: Message) -> str:
         try:
             # TODO: get current user info and send to chat db
             # user_response = self._make_request("GET", f"{self.user_url}/update_chat", json=chat_data.model_dump())
@@ -30,9 +30,11 @@ class ChatService:
                 "agent_name": query.agent_name
             })
             response = self._make_request("POST", f"{self.chat_url}/update_chat", json=chat_data.model_dump())
+            return chat_id
         except RequestException as e:
             logging.error(f"Failed to get update the message to database: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
 
     def extract_song_traits(self, query: Message) -> Traits:
         try:
@@ -41,6 +43,18 @@ class ChatService:
             return traits
         except RequestException as e:
             logging.error(f"Failed to get song traits from query {query}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def analyze_preference(self, user_id: str, chat_id: Optional[str]) -> str:
+        try:
+            response = self._make_request("POST",
+                                          f"{self.chat_url}/analyze_preference",
+                                          params={"user_id": user_id, "chat_id": chat_id}
+                                          )
+            # print(f"agent response: {response}")
+            return response.text
+        except RequestException as e:
+            logging.error(f"Failed to analyze preference for current user")
             raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, method: str, url: str, **kwargs) -> Response:
