@@ -16,5 +16,6 @@ class User(BaseModel):
     country: Optional[str] = None           # Spotify country
 
     # Our own information
+    jwt: Optional[str] = None               # JWT token
     created_at: Optional[datetime]          # Date format as string
     last_login: Optional[datetime]          # Date format as string

@@ -1,5 +1,6 @@
 import logging
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 
 from app.models.user import User  # CourseSection
@@ -7,6 +8,7 @@ from app.services.service_factory import ServiceFactory
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class LoginRequest(BaseModel):
     auth_code: str
@@ -16,7 +18,8 @@ async def login(request: LoginRequest):
     """Uses Spotify Auth Code to Login User
 
     Gets login service and sends authorization code to Spotify service
-    The service returns a user model, and this should save it to the database
+    The service returns a user's JWT, and this should save it to the database.
+    The UI can then use the JWT for future requests.
     """
 
     logger.info(f"Incoming Request - Method: POST, Path: /login, Body: {request.dict()}")
@@ -33,56 +36,55 @@ async def login(request: LoginRequest):
             raise HTTPException(status_code=400, detail="Spotify Login Failed")
 
         logger.info(f"Response - Method: POST, Path: /login, Status: 200, Body: {user.dict()}")
-        return user
+        return user.jwt
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/users/{user_id}", tags=["users"])
-async def get_user(user_id: str):
+@router.get("/users/me", tags=["users"])
+async def get_user(token: str = Depends(oauth2_scheme)):
     """Gets a User's Public Information"""
 
-    logger.info(f"Incoming Request - Method: GET, Path: /users/{user_id}")
+    logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
 
     try:
-        # Get details from Spotify integration service
-        user = user_service.get_user(user_id)
+        # Get the user's information in the database
+        user = user_service.get_user(token)
         logger.debug(f"User info: {user}")
         if not user:
-            logger.error(f"Failed to get user info for {user_id}")
+            logger.error(f"Failed to get user info")
             raise HTTPException(status_code=400, detail="User does not use Subwoofer")
 
-        logger.info(f"Response - Method: GET, Path: /users/{user_id}, Status: 200, Body: {user.dict()}")
+        logger.info(f"Response - Method: GET, Path: /users/me, Status: 200, Body: {user.dict()}")
         return user
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/users/{user_id}/playlists", tags=["users"])
-async def get_user_playlists(user_id: str):
+@router.get("/users/me/playlists", tags=["users"])
+async def get_user_playlists(token: str = Depends(oauth2_scheme)):
     """Gets a User's Playlists
-
-    TODO: Optional authentication to get private playlists
 
     Checks information from Spotify and updates our database behind
     the scenes with the latest information.
+    Requires a valid JWT.
     """
 
-    logger.info(f"Incoming Request - Method: GET, Path: /users/{user_id}/playlists")
+    logger.info(f"Incoming Request - Method: GET, Path: /users/me/playlists")
     user_service = ServiceFactory.get_service("User")
 
     try:
         # Get details from Spotify integration service
-        playlists = user_service.get_user_playlists(user_id)
+        playlists = user_service.get_user_playlists(token)
         logger.debug(f"User playlists: {playlists}")
         if not playlists:
             logger.error(f"Failed to get playlists for user {user_id}")
             raise HTTPException(status_code=400, detail="User does not have any playlists")
 
-        logger.info(f"Response - Method: GET, Path: /users/{user_id}/playlists, Status: 200, Body: {playlists}")
+        logger.info(f"Response - Method: GET, Path: /users/me/playlists, Status: 200, Body: {playlists}")
         return playlists
 
     except Exception as e:

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
-class Token(BaseModel):
+class SpotifyToken(BaseModel):
     access_token: str
     token_type: str
     scope: str
