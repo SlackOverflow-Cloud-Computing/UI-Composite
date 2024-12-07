@@ -40,18 +40,31 @@ class UserService:
             logging.error(f"Login failed for auth_code {auth_code}: {e}")
             return None
 
+    def validate_token(self, token: str, scope: tuple[str, str], id: Optional[str]=None) -> bool:
+        """Check if a JWT token is valid
+
+        Also checks if the token has the required scope for the endpoint. Optionally
+        checks if the token is associated with a specific user ID.
+        """
+        try:
+            payload = jwt.decode(token, algorithms=['HS256'])
+            if scope and scope[1] not in payload.get('scopes').get(scope[0]):
+                return False
+            if id and payload.get('user_id') != id:
+                return False
+            return True
+
+        except jwt.InvalidTokenError:
+            return False
+
     def get_user_id(self, token: str) -> Optional[str]:
         try:
             # Decode the JWT to get the user ID
             payload = jwt.decode(token, algorithms=['HS256'])
             return payload.get('user_id')
 
-        except jwt.ExpiredSignatureError:
-            logging.error(f"JWT expired: {jwt}")
-            return None
-
         except jwt.InvalidTokenError:
-            logging.error(f"Invalid JWT: {jwt}")
+            logging.error(f"Invalid JWT: {token}")
 
     def get_user(self, token: str) -> Optional[User]:
         user_id = self.get_user_id(token)
@@ -70,8 +83,9 @@ class UserService:
 
 
     def get_user_playlists(self, token: str) -> Optional[List[Playlist]]:
+
         user_id = self.get_user_id(token)
-        if not user_id:
+        if not user_id or not self.validate_token(token, ("/users/{user_id}/playlists", "GET"), user_id):
             return None
 
         if self._should_update(user_id):
@@ -86,7 +100,7 @@ class UserService:
 
     def _get_playlists_from_service(self, user_id: str, token: str) -> Optional[List[Playlist]]:
         try:
-            response = self._make_request('GET', f"{self.playlist_url}/playlists/{user_id}", token)
+            response = self._make_request('GET', f"{self.playlist_url}/users/{user_id}/playlists", token)
             playlists = parse_obj_as(List[Playlist], response.json())
             return playlists
         except requests.RequestException as e:
@@ -98,7 +112,7 @@ class UserService:
             logging.info(f"Updating playlists from Spotify for user {user_id}")
 
             # Get the user's spotify token from user service
-            response = self._make_request('GET', f"{self.user_url}/users/spotify_token", token)
+            response = self._make_request('GET', f"{self.user_url}/users/{user_id}/spotify_token", token)
             spotify_token = SpotifyToken.parse_obj(response.json())
 
             # Get the user's playlists from the playlist service
@@ -107,7 +121,9 @@ class UserService:
             spotify_playlists = response.json()
 
             # Update the playlist service with new data
-            self._make_request('POST', f"{self.playlist_url}/update_playlists", token, json=spotify_playlists)
+            for playlist in spotify_playlists:
+                playlist_id = playlist.get('id')
+                self._make_request('POST', f"{self.playlist_url}/playlists/{playlist_id}", token, json=spotify_playlists)
 
             playlists = parse_obj_as(List[Playlist], spotify_playlists)
             self.last_updated[user_id] = time.time()
