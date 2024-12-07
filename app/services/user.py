@@ -10,6 +10,8 @@ from app.models.user import User
 from app.models.playlist import Playlist
 from app.models.spotify_token import SpotifyToken
 
+from requests import Response, RequestException
+
 UPDATE_FREQUENCY = 300  # seconds -> 5 minutes
 
 

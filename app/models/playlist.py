@@ -16,3 +16,21 @@ class Playlist(BaseModel):
     image_url: Optional[str] = None         # URL of the playlist image
     spotify_branch: Optional[str] = None    # Spotify branch ID
     tracks: Optional[list[str]] = None      # List of Spotify track IDs
+
+
+class PlaylistContent(BaseModel):
+    playlist_id: str
+    playlist_name: str
+    track_id: str
+    track_name: str
+    added_at: Optional[datetime]
+    times_played: int
+
+
+class PlaylistInfo(BaseModel):
+    playlist_id: str
+    playlist_name: str
+    user_id: str
+    user_name: str
+    created_at: Optional[datetime]
+    times_played: int
