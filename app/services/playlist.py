@@ -1,3 +1,5 @@
+from http.client import responses
+
 import requests
 from typing import Optional, List
 from pydantic import ValidationError
@@ -36,15 +38,38 @@ class PlaylistService:
             logging.error(f"Failed to get playlists for user {user_id}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    def update_playlist(self, playlist_info: PlaylistInfo, playlist_content: PlaylistContent):
-        # new commit
-        pass
+    def update_playlist(self, playlist_id: str, playlist_info: PlaylistInfo, playlist_content: PlaylistContent):
+        try:
+            response = self._make_request(
+                "POST",
+                f"{self.playlist_url}/update/{playlist_id}",
+                json={
+                    "playlist_info": playlist_info.model_dump(mode="json"),
+                    "playlist_content": playlist_content.model_dump(mode="json"),
+                }
+            )
+            return response.json()
+        except RequestException as e:
+            logging.error(f"Failed to update playlist for playlist {playlist_id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def delete_playlist(self, playlist_id: str):
-        pass
+        try:
+            response = self._make_request("DELETE",
+                                          f"{self.playlist_url}/playlists/{playlist_id}")
+            return response.json()
+        except RequestException as e:
+            logging.error(f"Failed to delete playlist {playlist_id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def delete_song(self, playlist_id: str, track_id: str):
-        pass
+        try:
+            responses = self._make_request("DELETE",
+                                           f"{self.playlist_url}/playlists/{playlist_id}/{track_id}")
+            return responses.json()
+        except RequestException as e:
+            logging.error(f"Failed to delete song {track_id} for playlist {playlist_id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, method: str, url: str, **kwargs) -> Response:
         try:

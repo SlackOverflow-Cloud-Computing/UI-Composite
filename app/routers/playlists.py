@@ -55,18 +55,50 @@ async def get_playlist(playlist_id: str) -> PlaylistInfo:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/update_playlist", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
-async def update_playlist(playlist_info: PlaylistInfo, playlist_content: PlaylistContent):
-    pass
+async def update_playlist(playlist_id: str, playlist_info: PlaylistInfo, playlist_content: PlaylistContent):
+    logger.info(f"Incoming Request - Method: POST, Path: /playlist/{playlist_id}")
+    playlist_service = ServiceFactory.get_service("Playlist")
+    try:
+        message = playlist_service.update_playlist(playlist_id, playlist_info, playlist_content)
+        logger.debug(f"Playlist info and content received")
+        if not message:
+            logger.error(f"Failed to update playlist info for {playlist_id}")
+            raise HTTPException(status_code=400, detail=f"Could not update playlist info for {playlist_id}")
+        return message
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/delete_playlist", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def delete_playlist(playlist_id: str):
-    pass
+    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id}")
+    playlist_service = ServiceFactory.get_service("Playlist")
+
+    try:
+        message = playlist_service.delete_playlist(playlist_id)
+        logger.debug(f"Playlist id received")
+        if not message:
+            logger.error(f"Failed to delete playlist info for {playlist_id}")
+            raise HTTPException(status_code=400, detail=f"Could not delete playlist info for {playlist_id}")
+        return message
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/delete_song", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def delete_song(playlist_id: str, track_id: str):
-    pass
+    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id}")
+    playlist_service = ServiceFactory.get_service("Playlist")
+    try:
+        message = playlist_service.delete_song(playlist_id, track_id)
+        logger.debug(f"Playlist id and Track id received")
+        if not message:
+            logger.error(f"Failed to delete song info for {playlist_id}")
+            raise HTTPException(status_code=400, detail=f"Could not delete song info for {playlist_id}")
+        return message
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # @router.put("/update_playlist", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
