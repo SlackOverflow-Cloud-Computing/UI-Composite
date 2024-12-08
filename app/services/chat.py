@@ -1,9 +1,8 @@
 import requests
 import logging
-import uuid
 from typing import List, Optional
 
-from app.models.chat import Message, ChatData
+from app.models.chat import Message, ChatData, ChatResponse
 from app.models.song import Traits
 
 from requests import Response, RequestException
@@ -16,23 +15,25 @@ class ChatService:
         self.chat_url = chat_url
         self.user_url = user_url
 
-    def update_chat_database(self, query: Message) -> str:
+    def update_chat_database(self, chat_data: ChatData) -> str:
         try:
-            # TODO: get current user info and send to chat db
-            # user_response = self._make_request("GET", f"{self.user_url}/update_chat", json=chat_data.model_dump())
-            chat_id = str(uuid.uuid4())  # temporary solution
-            chat_data = ChatData(**{
-                "chat_id": chat_id,
-                "user_id": "",
-                "user_name": "",
-                "role": query.role,
-                "content": query.query,
-                "agent_name": query.agent_name
-            })
             response = self._make_request("POST", f"{self.chat_url}/update_chat", json=chat_data.model_dump())
-            return chat_id
+            return response.text
         except RequestException as e:
             logging.error(f"Failed to get update the message to database: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+    def general_chat(self, query: str, user_id: str, chat_id: Optional[str]) -> ChatResponse:
+        try:
+            response = self._make_request("POST",
+                                          f"{self.chat_url}/general_chat",
+                                          params={"user_id": user_id, "chat_id": chat_id, "query": query}
+                                          )
+            response = ChatResponse.parse_obj(response.json())
+            return response
+        except RequestException as e:
+            logging.error(f"Failed to generate chat response")
             raise HTTPException(status_code=500, detail=str(e))
 
 
