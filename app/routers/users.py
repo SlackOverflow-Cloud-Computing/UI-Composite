@@ -67,7 +67,7 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
 
 
 @router.get("/users/{user_id}/playlists", tags=["users"])
-async def get_user_playlists(token: str = Depends(oauth2_scheme)):
+async def get_user_playlists(user_id: str, token: str = Depends(oauth2_scheme)):
     """Gets a User's Playlists
 
     Checks information from Spotify and updates our database behind

@@ -1,3 +1,4 @@
+import os
 import requests
 import logging
 from typing import List, Optional
@@ -13,6 +14,7 @@ from app.models.spotify_token import SpotifyToken
 from requests import Response, RequestException
 
 UPDATE_FREQUENCY = 300  # seconds -> 5 minutes
+JWT_SECRET = os.getenv('JWT_SECRET')
 
 
 class UserService:
@@ -40,6 +42,10 @@ class UserService:
             logging.error(f"Login failed for auth_code {auth_code}: {e}")
             return None
 
+        except ValidationError as e:
+            logging.error(f"Failed to parse user data: {e}")
+            return None
+
     def validate_token(self, token: str, scope: tuple[str, str], id: Optional[str]=None) -> bool:
         """Check if a JWT token is valid
 
@@ -60,7 +66,7 @@ class UserService:
     def get_user_id(self, token: str) -> Optional[str]:
         try:
             # Decode the JWT to get the user ID
-            payload = jwt.decode(token, algorithms=['HS256'])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             return payload.get('user_id')
 
         except jwt.InvalidTokenError:

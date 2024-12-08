@@ -3,6 +3,7 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 
 from app.models.chat import Message
 from app.models.song import Song, Traits
@@ -12,32 +13,44 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+class RecommendationRequest(BaseModel):
+    message: str
+    userId: str
 
-@router.get("/recommendations", tags=["recommendations"], response_model=List[Song], status_code=status.HTTP_200_OK)
-async def query_to_recommendations(query: str, token: str = Depends(oauth2_scheme)) -> List[Song]:
+@router.post(
+    "/recommendations",
+    tags=["recommendations"],
+    response_model=List[Song],
+    status_code=status.HTTP_200_OK
+)
+async def query_to_recommendations(
+    req: RecommendationRequest,
+    token: str = Depends(oauth2_scheme)
+) -> List[Song]:
     """Given a user query, return recommended songs"""
+    logger.info("Incoming Request - Method: POST, Path: /recommendations")
 
-    logger.info(f"Incoming Request - Method: POST, Path: /recommendations")
     chat_service = ServiceFactory.get_service("Chat")
     recommendation_service = ServiceFactory.get_service("Recommendation")
-    # query = Message(query=query)
+
     query = Message(**{
-        "query": query,
+        "query": req.message,
         "role": "human",
         "agent_name": "Recommendation"
-    }) # Updated query
+    })
 
     try:
         chat_service.update_chat_database(query) # Store to database
         result = chat_service.extract_song_traits(query)
         logger.debug(f"Got song traits: {result}")
+
         result = recommendation_service.get_recommendations(token, result)
         logger.debug(f"Got song recommendations: {result}")
         return result
     except Exception as e:
-        if isinstance(e, HTTPException): # Return any error specified in the chat service
+        if isinstance(e, HTTPException):
             raise e
-        else: # Otherwise default to generic server error
+        else:
             raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/recommendations/playlist", tags=["recommendations"], response_model=List[Song], status_code=status.HTTP_200_OK)
