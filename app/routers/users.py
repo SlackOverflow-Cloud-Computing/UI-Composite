@@ -36,7 +36,9 @@ async def login(request: LoginRequest):
             raise HTTPException(status_code=400, detail="Spotify Login Failed")
 
         logger.info(f"Response - Method: POST, Path: /login, Status: 200, Body: {user.dict()}")
-        return user.jwt
+        # return user.jwt
+        # Xinyi: why only return jwt here?
+        return user
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
