@@ -3,6 +3,7 @@ import uuid
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Request, status, Query, Depends
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 
 from app.models.chat import Message, ChatData, WebChat
 from app.models.song import Song, Traits
@@ -12,6 +13,10 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+class RecommendationRequest(BaseModel):
+    message: str
+    userId: str
+
 
 @router.post("/chats", tags=["chats"], status_code=status.HTTP_200_OK)
 async def general_chat(request: Request) -> WebChat:
@@ -20,6 +25,7 @@ async def general_chat(request: Request) -> WebChat:
     user_id = data.get("user_id")
     chat_id = data.get("chat_id")
     query = data.get("query")
+    token = data.get("token")
 
     if chat_id is None:
         chat_id = str(uuid.uuid4())
@@ -33,6 +39,9 @@ async def general_chat(request: Request) -> WebChat:
         chat_id=chat_id,
         user_id=user_id
     )
+
+    if token and not chat_service.validate_token(token, id=user_id, scope=("/chats", "POST")):
+        raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
         # Get natural language response and optionally traits
@@ -73,9 +82,26 @@ async def general_chat(request: Request) -> WebChat:
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/recommendations", tags=["recommendations"], response_model=List[Song], status_code=status.HTTP_200_OK)
-async def query_to_recommendations(query: str, token: str = Depends(oauth2_scheme)) -> List[Song]:
+@router.post(
+    "/recommendations",
+    tags=["recommendations"],
+    response_model=List[Song],
+    status_code=status.HTTP_200_OK
+)
+async def query_to_recommendations(
+    req: RecommendationRequest,
+    token: str = Depends(oauth2_scheme)
+) -> List[Song]:
     """Given a user query, return recommended songs"""
+    logger.info("Incoming Request - Method: POST, Path: /recommendations")
+    chat_service = ServiceFactory.get_service("Chat")
+    recommendation_service = ServiceFactory.get_service("Recommendation")
+
+    query = Message(**{
+        "query": req.message,
+        "role": "human",
+        "agent_name": "Recommendation"
+    })
 
     logger.info(f"Incoming Request - Method: GET, Path: /recommendations")
     chat_service = ServiceFactory.get_service("Chat")
@@ -91,10 +117,12 @@ async def query_to_recommendations(query: str, token: str = Depends(oauth2_schem
         chat_service.update_chat_database(chat_data)  # Store to database
         result = chat_service.extract_song_traits(query)
         logger.debug(f"Got song traits: {result}")
+
         result = recommendation_service.get_recommendations(token, result)
         logger.debug(f"Got song recommendations: {result}")
         return result
     except Exception as e:
+
         if isinstance(e, HTTPException):  # Return any error specified in the chat service
             raise e
         else:  # Otherwise default to generic server error

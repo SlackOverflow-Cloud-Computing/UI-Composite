@@ -12,7 +12,15 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.get("/users/{user_id}/playlists", tags=["playlists"], status_code=status.HTTP_200_OK)
+@router.post("/token")
+async def login_for_access_token(
+) -> dict:
+    """This is just for testing"""
+
+    return {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGV4cmFjYXBlIiwiaWF0IjoxNzMzNjg5NjI2LCJzY29wZXMiOnsiL2F1dGgvbG9naW4iOlsiUE9TVCJdLCIvdXNlcnMve3VzZXJfaWR9L3BsYXlsaXN0cyI6WyJHRVQiXSwiL3VzZXJzL3t1c2VyX2lkfSI6WyJHRVQiLCJQVVQiXSwiL3VzZXJzL3t1c2VyX2lkfS9zcG90aWZ5X3Rva2VuIjpbIkdFVCJdLCIvcGxheWxpc3RzL3twbGF5bGlzdF9pZH0iOlsiR0VUIiwiUE9TVCIsIkRFTEVURSJdLCIvcGxheWxpc3RzL3twbGF5bGlzdF9pZH0vdHJhY2tzL3t0cmFja19pZH0iOlsiREVMRVRFIl0sIi9yZWNvbW1lbmRhdGlvbnMiOlsiR0VUIl0sIi9yZWNvbW1lbmRhdGlvbnMvcGxheWxpc3QiOlsiR0VUIl19fQ.SuQq7SVDOazCaJcZE_cUrzLTvDc4nr6xtj8xA1sEplI", "token_type": "bearer"}
+
+
+#@router.get("/users/{user_id}/playlists", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(False), token: str = Depends(oauth2_scheme)) -> List[PlaylistInfo]:
     """ Get user's playlists from our database; if no data, get from Spotify API"""
 

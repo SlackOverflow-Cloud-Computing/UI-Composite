@@ -2,11 +2,13 @@ import requests
 import logging
 from typing import List, Optional
 
+import jwt
+from requests import Response, RequestException
+from fastapi import HTTPException
+
 from app.models.chat import Message, ChatData, ChatResponse
 from app.models.song import Traits
 
-from requests import Response, RequestException
-from fastapi import HTTPException
 
 
 class ChatService:
@@ -14,6 +16,23 @@ class ChatService:
     def __init__(self, chat_url: str, user_url: str):
         self.chat_url = chat_url
         self.user_url = user_url
+
+    def validate_token(self, token: str, scope: tuple[str, str], id: Optional[str]=None) -> bool:
+        """Check if a JWT token is valid
+
+        Also checks if the token has the required scope for the endpoint. Optionally
+        checks if the token is associated with a specific user ID.
+        """
+        try:
+            payload = jwt.decode(token, algorithms=['HS256'])
+            if scope and scope[1] not in payload.get('scopes').get(scope[0]):
+                return False
+            if id and payload.get('user_id') != id:
+                return False
+            return True
+
+        except jwt.InvalidTokenError:
+            return False
 
     def update_chat_database(self, chat_data: ChatData) -> str:
         try:
