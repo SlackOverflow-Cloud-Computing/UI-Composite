@@ -76,6 +76,7 @@ async def get_user_preference() -> str:
             "agent_name": "Preference"
         })
         chat_service.update_chat_database(query)  # Store to database
+        result = result.strip("\"")
         return result
     except Exception as e:
         if isinstance(e, HTTPException):  # Return any error specified in the chat service
