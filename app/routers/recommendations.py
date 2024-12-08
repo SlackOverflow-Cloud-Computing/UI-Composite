@@ -1,8 +1,7 @@
 import logging
 import uuid
 from typing import Optional, List
-
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, HTTPException, Request, status, Query, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.models.chat import Message, ChatData, WebChat
@@ -15,12 +14,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @router.post("/chats", tags=["chats"], status_code=status.HTTP_200_OK)
-async def general_chat(
-        user_id: str = Query(..., description="User ID (required)"),
-        chat_id: str = Query(None, description="Chat ID (optional)"),
-        query: str = Query(..., description="Chat Input (required)")
-) -> WebChat:
+async def general_chat(request: Request) -> WebChat:
     """Process the general chat and give the recommendation when needed"""
+    data = await request.json()
+    user_id = data.get("user_id")
+    chat_id = data.get("chat_id")
+    query = data.get("query")
 
     if chat_id is None:
         chat_id = str(uuid.uuid4())
