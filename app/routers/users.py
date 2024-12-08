@@ -1,4 +1,5 @@
 import logging
+
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class LoginRequest(BaseModel):
     auth_code: str
 
-@router.post("/login", tags=["users"], status_code=status.HTTP_201_CREATED)
+@router.post("/auth/login", tags=["users"], status_code=status.HTTP_201_CREATED)
 async def login(request: LoginRequest):
     """Uses Spotify Auth Code to Login User
 
@@ -28,7 +29,6 @@ async def login(request: LoginRequest):
 
     try:
 
-        # Get details from Spotify integration service
         user = user_service.login(auth_code)
         logger.debug(f"User info received: {user}")
         if not user:
@@ -42,12 +42,14 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/users/me", tags=["users"])
-async def get_user(token: str = Depends(oauth2_scheme)):
+@router.get("/users/{user_id}", tags=["users"])
+async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
     """Gets a User's Public Information"""
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
+    if not user_service.validate_token(token, id=user_id, scope=("/users/{user_id}", "GET")):
+        raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
         # Get the user's information in the database
@@ -64,7 +66,7 @@ async def get_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/users/me/playlists", tags=["users"])
+@router.get("/users/{user_id}/playlists", tags=["users"])
 async def get_user_playlists(token: str = Depends(oauth2_scheme)):
     """Gets a User's Playlists
 
