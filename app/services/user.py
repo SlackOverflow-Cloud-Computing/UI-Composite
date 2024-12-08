@@ -28,11 +28,11 @@ class UserService:
 
         try:
             # Exchange the auth code for user info from the Spotify integration service
-            response = self._make_request('POST', f"{self.spotify_url}/login", token="", json=payload)
+            response = self._make_request('POST', f"{self.spotify_url}/auth/login", token="", json=payload)
             data = response.json()
 
             # Update the user in the User service
-            updated_response = self._make_request('PUT', f"{self.user_url}/update_user", token="", json=data)
+            updated_response = self._make_request('POST', f"{self.user_url}/users", token="", json=data)
             user = User.parse_obj(updated_response.json())
             return user
 

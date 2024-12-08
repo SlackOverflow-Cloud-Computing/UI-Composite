@@ -29,7 +29,6 @@ async def login(request: LoginRequest):
 
     try:
 
-        # Get details from Spotify integration service
         user = user_service.login(auth_code)
         logger.debug(f"User info received: {user}")
         if not user:
@@ -49,7 +48,7 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
-    if not user_service.validate_token(token, id=user_id scope=("/users/{user_id}", "GET")):
+    if not user_service.validate_token(token, id=user_id, scope=("/users/{user_id}", "GET")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
