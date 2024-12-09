@@ -48,7 +48,6 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
-    print(f"Token in router: {token}")
     if not user_service.validate_token(token=token, id=user_id, scope=("/users/{user_id}", "GET")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
