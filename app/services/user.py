@@ -12,9 +12,11 @@ from app.models.playlist import Playlist
 from app.models.spotify_token import SpotifyToken
 
 from requests import Response, RequestException
+import dotenv
 
+dotenv.load_dotenv()
 UPDATE_FREQUENCY = 300  # seconds -> 5 minutes
-JWT_SECRET = os.getenv('JWT_SECRET')
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 
 class UserService:
@@ -53,27 +55,33 @@ class UserService:
         checks if the token is associated with a specific user ID.
         """
         try:
-            payload = jwt.decode(token, algorithms=['HS256'])
-            if scope and scope[1] not in payload.get('scopes').get(scope[0]):
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            if scope[1] not in payload.get('scopes').get(scope[0]):
                 return False
-            if id and payload.get('user_id') != id:
+            if id and payload.get('sub') != id:
                 return False
             return True
 
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            logging.error(f"Invalid JWT: {e}")
+            return False
+
+        except Exception as e:
+            logging.error(f"Failed to validate token: {e}")
             return False
 
     def get_user_id(self, token: str) -> Optional[str]:
         try:
             # Decode the JWT to get the user ID
             payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            return payload.get('user_id')
+            return payload.get('sub')
 
         except jwt.InvalidTokenError:
             logging.error(f"Invalid JWT: {token}")
 
     def get_user(self, token: str) -> Optional[User]:
         user_id = self.get_user_id(token)
+        print(f"User Id from token: {user_id}")
         if not user_id:
             return None
 
@@ -84,6 +92,10 @@ class UserService:
             return user
 
         except requests.RequestException as e:
+            logging.error(f"Failed to get user {user_id}: {e}")
+            return None
+
+        except Exception as e:
             logging.error(f"Failed to get user {user_id}: {e}")
             return None
 

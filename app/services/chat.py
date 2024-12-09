@@ -27,7 +27,7 @@ class ChatService:
             payload = jwt.decode(token, algorithms=['HS256'])
             if scope and scope[1] not in payload.get('scopes').get(scope[0]):
                 return False
-            if id and payload.get('user_id') != id:
+            if id and payload.get('sub') != id:
                 return False
             return True
 

@@ -36,9 +36,7 @@ async def login(request: LoginRequest):
             raise HTTPException(status_code=400, detail="Spotify Login Failed")
 
         logger.info(f"Response - Method: POST, Path: /login, Status: 200, Body: {user.dict()}")
-        # return user.jwt
-        # Xinyi: why only return jwt here?
-        return user
+        return user.jwt
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,13 +48,15 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
 
     logger.info(f"Incoming Request - Method: GET, Path: /users/me")
     user_service = ServiceFactory.get_service("User")
-    if not user_service.validate_token(token, id=user_id, scope=("/users/{user_id}", "GET")):
+    print(f"Token in router: {token}")
+    if not user_service.validate_token(token=token, id=user_id, scope=("/users/{user_id}", "GET")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
         # Get the user's information in the database
+        logger.info(f"Getting user info for user_id: {user_id}")
         user = user_service.get_user(token)
-        logger.debug(f"User info: {user}")
+        logger.info(f"User info: {user}")
         if not user:
             logger.error(f"Failed to get user info")
             raise HTTPException(status_code=400, detail="User does not use Subwoofer")
@@ -65,6 +65,7 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
         return user
 
     except Exception as e:
+        logger.error(f"Failed to get user info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -77,7 +78,7 @@ async def get_user_playlists(user_id: str, token: str = Depends(oauth2_scheme)):
     Requires a valid JWT.
     """
 
-    logger.info(f"Incoming Request - Method: GET, Path: /users/me/playlists")
+    logger.info(f"Incoming Request - Method: GET, Path: /users/{user_id}/playlists")
     user_service = ServiceFactory.get_service("User")
 
     try:
@@ -88,7 +89,7 @@ async def get_user_playlists(user_id: str, token: str = Depends(oauth2_scheme)):
             logger.error(f"Failed to get playlists for user {user_id}")
             raise HTTPException(status_code=400, detail="User does not have any playlists")
 
-        logger.info(f"Response - Method: GET, Path: /users/me/playlists, Status: 200, Body: {playlists}")
+        logger.info(f"Response - Method: GET, Path: /users/{user_id}/playlists, Status: 200, Body: {playlists}")
         return playlists
 
     except Exception as e:
