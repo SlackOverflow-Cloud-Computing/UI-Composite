@@ -8,9 +8,11 @@ import jwt
 from pydantic import ValidationError
 from requests import Response, RequestException
 from fastapi import HTTPException, Query
+import dotenv
 
 from app.models.playlist import Playlist, PlaylistInfo, PlaylistContent
 
+dotenv.load_dotenv()
 JWT_SECRET = os.getenv('JWT_SECRET')
 ALGORITHM = "HS256"
 
