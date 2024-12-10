@@ -39,6 +39,9 @@ async def login(request: LoginRequest):
         return user.jwt
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -65,6 +68,9 @@ async def get_user(user_id: str, token: str = Depends(oauth2_scheme)):
 
     except Exception as e:
         logger.error(f"Failed to get user info: {str(e)}")
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -92,4 +98,7 @@ async def get_user_playlists(user_id: str, token: str = Depends(oauth2_scheme)):
         return playlists
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))

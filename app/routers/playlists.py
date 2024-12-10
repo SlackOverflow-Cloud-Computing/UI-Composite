@@ -46,6 +46,9 @@ async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(Fal
         return playlists
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
@@ -67,6 +70,9 @@ async def get_playlist(playlist_id: str, token: str = Depends(oauth2_scheme)) ->
         return playlist
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
@@ -85,6 +91,9 @@ async def update_playlist(playlist_id: str, playlist_info: PlaylistInfo, playlis
         return message
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
@@ -103,6 +112,9 @@ async def delete_playlist(playlist_id: str, token: str = Depends(oauth2_scheme))
         return message
 
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -121,6 +133,9 @@ async def delete_song(playlist_id: str, track_id: str, token: str = Depends(oaut
             raise HTTPException(status_code=400, detail=f"Could not delete song info for {playlist_id}")
         return message
     except Exception as e:
+        # raise nested exception instead of generic 500
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 

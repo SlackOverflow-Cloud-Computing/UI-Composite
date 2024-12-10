@@ -1,6 +1,7 @@
 import requests
 import logging
 from typing import List, Optional
+import os
 
 import jwt
 from requests import Response, RequestException
@@ -9,7 +10,7 @@ from fastapi import HTTPException
 from app.models.chat import Message, ChatData, ChatResponse
 from app.models.song import Traits
 
-
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 class ChatService:
 
@@ -24,7 +25,7 @@ class ChatService:
         checks if the token is associated with a specific user ID.
         """
         try:
-            payload = jwt.decode(token, algorithms=['HS256'])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             if scope and scope[1] not in payload.get('scopes').get(scope[0]):
                 return False
             if id and payload.get('sub') != id:
@@ -42,6 +43,9 @@ class ChatService:
             return response.text
         except RequestException as e:
             logging.error(f"Failed to get update the message to database: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -55,6 +59,9 @@ class ChatService:
             return response
         except RequestException as e:
             logging.error(f"Failed to generate chat response")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -65,6 +72,9 @@ class ChatService:
             return traits
         except RequestException as e:
             logging.error(f"Failed to get song traits from query {query}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def analyze_preference(self, user_id: str, chat_id: Optional[str]) -> str:
@@ -77,6 +87,9 @@ class ChatService:
             return response.text
         except RequestException as e:
             logging.error(f"Failed to analyze preference for current user")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, method: str, url: str, **kwargs) -> Response:
