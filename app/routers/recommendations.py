@@ -39,9 +39,8 @@ async def general_chat(request: Request) -> WebChat:
         chat_id=chat_id,
         user_id=user_id
     )
-
-    # Xinyi: temporary skip this to allow testing
-    if token and not chat_service.validate_token(token, id=user_id, scope=("/chats", "POST")):
+ 
+    if not chat_service.validate_token(token, id=user_id, scope=("/chats", "POST")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:

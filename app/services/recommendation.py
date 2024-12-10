@@ -15,8 +15,10 @@ class RecommendationService:
         self.spotify_adapter_url = spotify_adapter_url
 
     def get_recommendations(self, token: str, params: Traits) -> List[Song]:
+        params = params.model_dump()
+        params["token"] = token
         try:
-            response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", params=params.model_dump())
+            response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", params=params)
             songs = [Song.parse_obj(song) for song in response.json()]
             return songs
         except RequestException as e:

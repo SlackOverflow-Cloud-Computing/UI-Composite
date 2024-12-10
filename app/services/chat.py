@@ -1,6 +1,7 @@
 import requests
 import logging
 from typing import List, Optional
+import os
 
 import jwt
 from requests import Response, RequestException
@@ -9,7 +10,7 @@ from fastapi import HTTPException
 from app.models.chat import Message, ChatData, ChatResponse
 from app.models.song import Traits
 
-
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 class ChatService:
 
@@ -24,7 +25,7 @@ class ChatService:
         checks if the token is associated with a specific user ID.
         """
         try:
-            payload = jwt.decode(token, algorithms=['HS256'])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             if scope and scope[1] not in payload.get('scopes').get(scope[0]):
                 return False
             if id and payload.get('sub') != id:
