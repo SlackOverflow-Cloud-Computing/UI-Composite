@@ -116,6 +116,11 @@ class UserService:
         try:
             response = self._make_request('GET', f"{self.user_url}/users/{user_id}/spotify_token", token)
             spotify_token = SpotifyToken.parse_obj(response.json())
+            # TODO: shouldn't need to refresh every time
+            params = spotify_token.model_dump()
+            params["token"] = token
+            response = self._make_request('GET', f"{self.spotify_url}/users/{user_id}/refreshed_token", token, params=params)
+            spotify_token = SpotifyToken.parse_obj(response.json())
             return spotify_token
         except requests.RequestException as e:
             logging.error(f"Failed to get Spotify token for {user_id}: {e}")
