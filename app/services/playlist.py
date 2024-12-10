@@ -46,6 +46,9 @@ class PlaylistService:
             return playlist
         except RequestException as e:
             logging.error(f"Failed to get playlist of {playlist_id}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_playlists(self, user_id: str, token: str) -> List[PlaylistInfo]:
@@ -55,6 +58,9 @@ class PlaylistService:
             return playlists
         except RequestException as e:
             logging.error(f"Failed to get playlists for user {user_id}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def update_playlist(self, playlist_id: str, playlist_info: PlaylistInfo, playlist_content: PlaylistContent, token: str):
@@ -72,6 +78,9 @@ class PlaylistService:
 
         except RequestException as e:
             logging.error(f"Failed to update playlist for playlist {playlist_id}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def delete_playlist(self, playlist_id: str, token: str):
@@ -82,6 +91,9 @@ class PlaylistService:
             return response.json()
         except RequestException as e:
             logging.error(f"Failed to delete playlist {playlist_id}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def delete_song(self, playlist_id: str, track_id: str, token: str):
@@ -92,6 +104,9 @@ class PlaylistService:
             return responses.json()
         except RequestException as e:
             logging.error(f"Failed to delete song {track_id} for playlist {playlist_id}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, token: str, method: str, url: str, **kwargs) -> Response:
