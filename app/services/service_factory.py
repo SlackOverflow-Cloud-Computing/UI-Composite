@@ -2,7 +2,7 @@ from framework.services.service_factory import BaseServiceFactory
 from app.services.user import UserService
 from app.services.playlist import PlaylistService
 from app.services.chat import ChatService
-from app.services.recommendation import RecommandationService
+from app.services.recommendation import RecommendationService
 import dotenv, os
 
 dotenv.load_dotenv()
@@ -27,7 +27,7 @@ class ServiceFactory(BaseServiceFactory):
         elif service_name == "Chat":
             result = ChatService(chat_url=chat_url, user_url=user_url)
         elif service_name == "Recommendation":
-            result = RecommandationService(spotify_adapter_url=spotify_url)
+            result = RecommendationService(spotify_adapter_url=spotify_url)
         else:
             result = None
 

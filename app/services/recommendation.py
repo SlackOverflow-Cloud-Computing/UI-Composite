@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 
 
-class RecommandationService:
+class RecommendationService:
 
     def __init__(self, spotify_adapter_url: str):
         self.spotify_adapter_url = spotify_adapter_url

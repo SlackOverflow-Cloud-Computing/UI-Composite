@@ -59,11 +59,12 @@ async def general_chat(request: Request) -> WebChat:
             )
             chat_service.update_chat_database(chat_data)
             if agent_response.traits:
-                traits = chat_service.extract_song_traits(chat_data)
-                recommendation_service = ServiceFactory.get_service("Recommendation")
+                # traits = chat_service.extract_song_traits(agent_response.traits)
+                traits = agent_response.traits
                 logger.debug(f"Got song traits: {traits}")
-                songs = recommendation_service.get_recommendations(traits)
-                logger.debug(f"Got song recommendations: {songs}")
+                recommendation_service = ServiceFactory.get_service("Recommendation")
+                songs = recommendation_service.get_recommendations(token, traits)
+                logger.debug(f"Got song recommendations: {songs}")  
                 response_data = WebChat(
                     content=chat_message,
                     songs=songs
