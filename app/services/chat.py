@@ -40,6 +40,9 @@ class ChatService:
             return response.text
         except RequestException as e:
             logging.error(f"Failed to get update the message to database: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -53,6 +56,9 @@ class ChatService:
             return response
         except RequestException as e:
             logging.error(f"Failed to generate chat response")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -63,6 +69,9 @@ class ChatService:
             return traits
         except RequestException as e:
             logging.error(f"Failed to get song traits from query {query}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def analyze_preference(self, user_id: str, chat_id: Optional[str]) -> str:
@@ -75,6 +84,9 @@ class ChatService:
             return response.text
         except RequestException as e:
             logging.error(f"Failed to analyze preference for current user")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, method: str, url: str, **kwargs) -> Response:

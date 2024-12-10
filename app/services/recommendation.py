@@ -21,6 +21,9 @@ class RecommendationService:
             return songs
         except RequestException as e:
             logging.error(f"Failed to get song recommendations from traits {params}: {e}")
+            # raise nested exception instead of generic 500
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=500, detail=str(e))
 
     def _make_request(self, token: str, method: str, url: str, **kwargs) -> Response:
