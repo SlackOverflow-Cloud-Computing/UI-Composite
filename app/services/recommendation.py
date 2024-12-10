@@ -18,7 +18,7 @@ class RecommendationService:
     def get_recommendations(self, token: str, spotify_token: SpotifyToken, traits: Traits) -> List[Song]:
         params = traits.model_dump()
         params["token"] = token
-        params["spotify_token"] = spotify_token
+        params["spotify_access_token"] = spotify_token.access_token
         try:
             response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", params=params)
             songs = [Song.parse_obj(song) for song in response.json()]

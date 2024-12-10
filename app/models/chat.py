@@ -37,4 +37,4 @@ class ChatResponse(BaseModel):
 
 class WebChat(BaseModel):
     content: str
-    songs: Optional[Song]
+    songs: Optional[List[Song]]
