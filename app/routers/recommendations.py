@@ -62,7 +62,9 @@ async def general_chat(request: Request) -> WebChat:
                 traits = agent_response.traits
                 logger.debug(f"Got song traits: {traits}")
                 recommendation_service = ServiceFactory.get_service("Recommendation")
-                songs = recommendation_service.get_recommendations(token, traits)
+                user_service = ServiceFactory.get_service("User")
+                spotify_token = user_service.get_spotify_token(user_id, token)
+                songs = recommendation_service.get_recommendations(token, spotify_token, traits)
                 logger.debug(f"Got song recommendations: {songs}")  
                 response_data = WebChat(
                     content=chat_message,
@@ -91,7 +93,8 @@ async def general_chat(request: Request) -> WebChat:
 )
 async def query_to_recommendations(
     req: RecommendationRequest,
-    token: str = Depends(oauth2_scheme)
+    user_id: str,
+    token: str = Depends(oauth2_scheme),
 ) -> List[Song]:
     """Given a user query, return recommended songs"""
     logger.info("Incoming Request - Method: POST, Path: /recommendations")
@@ -119,7 +122,9 @@ async def query_to_recommendations(
         result = chat_service.extract_song_traits(query)
         logger.debug(f"Got song traits: {result}")
 
-        result = recommendation_service.get_recommendations(token, result)
+        user_service = ServiceFactory.get_service("User")
+        spotify_token = user_service.get_spotify_token(user_id, token)
+        result = recommendation_service.get_recommendations(token, spotify_token, result)
         logger.debug(f"Got song recommendations: {result}")
         return result
     except Exception as e:
@@ -131,16 +136,18 @@ async def query_to_recommendations(
 
 
 @router.get("/recommendations/playlist", tags=["recommendations"], response_model=List[Song], status_code=status.HTTP_200_OK)
-async def playlist_to_recommendations(song_ids: List[str] | None = Query(), token: str = Depends(oauth2_scheme)) -> List[Song]:
+async def playlist_to_recommendations(user_id: str, song_ids: List[str] | None = Query(), token: str = Depends(oauth2_scheme)) -> List[Song]:
     """Given a list of song ids, return recommended songs"""
 
-    logger.info(f"Incoming Request - Method: GET, Path: /playlist_recommendations")
+    logger.info(f"Incoming Request - Method: GET, Path: /recommendations/playlist")
 
     recommendation_service = ServiceFactory.get_service("Recommendation")
     traits = Traits(seed_tracks=song_ids)
 
     try:
-        result = recommendation_service.get_recommendations(token, traits)
+        user_service = ServiceFactory.get_service("User")
+        spotify_token = user_service.get_spotify_token(user_id, token)
+        result = recommendation_service.get_recommendations(token, spotify_token, result)
         logger.debug(f"Got song recommendations: {result}")
         return result
     except Exception as e:

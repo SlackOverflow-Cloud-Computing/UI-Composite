@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional
 
 from app.models.song import Song, Traits
+from app.models.spotify_token import SpotifyToken
 
 from requests import Response, RequestException
 from fastapi import HTTPException
@@ -14,9 +15,10 @@ class RecommendationService:
     def __init__(self, spotify_adapter_url: str):
         self.spotify_adapter_url = spotify_adapter_url
 
-    def get_recommendations(self, token: str, params: Traits) -> List[Song]:
-        params = params.model_dump()
+    def get_recommendations(self, token: str, spotify_token: SpotifyToken, traits: Traits) -> List[Song]:
+        params = traits.model_dump()
         params["token"] = token
+        params["spotify_token"] = spotify_token
         try:
             response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", params=params)
             songs = [Song.parse_obj(song) for song in response.json()]

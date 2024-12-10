@@ -112,6 +112,15 @@ class UserService:
             playlists = self._get_playlists_from_service(user_id, token)
         return playlists
 
+    def get_spotify_token(self, user_id: str, token: str) -> Optional[SpotifyToken]:
+        try:
+            response = self._make_request('GET', f"{self.user_url}/users/{user_id}/spotify_token", token)
+            spotify_token = SpotifyToken.parse_obj(response.json())
+            return spotify_token
+        except requests.RequestException as e:
+            logging.error(f"Failed to get Spotify token for {user_id}: {e}")
+            return None
+
     def _should_update(self, user_id: str) -> bool:
         last_time = self.last_updated.get(user_id, 0)
         return (time.time() - last_time) >= UPDATE_FREQUENCY
@@ -130,8 +139,7 @@ class UserService:
             logging.info(f"Updating playlists from Spotify for user {user_id}")
 
             # Get the user's spotify token from user service
-            response = self._make_request('GET', f"{self.user_url}/users/{user_id}/spotify_token", token)
-            spotify_token = SpotifyToken.parse_obj(response.json())
+            spotify_token = self.get_spotify_token(user_id, token)
 
             # Get the user's playlists from the playlist service
             payload = {"spotify_token": spotify_token}
