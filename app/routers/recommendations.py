@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union
 from fastapi import APIRouter, HTTPException, Request, status, Query, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
@@ -131,7 +131,10 @@ async def query_to_recommendations(
 
 
 @router.get("/recommendations/playlist", tags=["recommendations"], response_model=List[Song], status_code=status.HTTP_200_OK)
-async def playlist_to_recommendations(song_ids: List[str] | None = Query(), token: str = Depends(oauth2_scheme)) -> List[Song]:
+async def playlist_to_recommendations(
+    song_ids: Union[List[str], None] = Query(default=None),
+    token: str = Depends(oauth2_scheme)
+) -> List[Song]:
     """Given a list of song ids, return recommended songs"""
 
     logger.info(f"Incoming Request - Method: GET, Path: /playlist_recommendations")

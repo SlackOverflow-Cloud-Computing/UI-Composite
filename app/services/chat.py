@@ -36,6 +36,8 @@ class ChatService:
 
     def update_chat_database(self, chat_data: ChatData) -> str:
         try:
+            logging.info(f"Updating chat database with data: {chat_data.model_dump()}")
+            logging.info(f"Chat URL: {self.chat_url}")
             response = self._make_request("POST", f"{self.chat_url}/update_chat", json=chat_data.model_dump())
             return response.text
         except RequestException as e:
