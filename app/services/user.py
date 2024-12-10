@@ -37,7 +37,7 @@ class UserService:
 
             # Update the user in the User service
             updated_response = self._make_request('POST', f"{self.user_url}/users", token="", json=data)
-            user = User.parse_obj(updated_response.json())
+            user = User.parse_obj(updated_response.json().get('user'))
             return user
 
         except requests.RequestException as e:
