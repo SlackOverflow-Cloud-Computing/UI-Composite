@@ -63,9 +63,13 @@ async def general_chat(request: Request) -> WebChat:
                 logger.debug(f"Got song traits: {traits}")
                 recommendation_service = ServiceFactory.get_service("Recommendation")
                 user_service = ServiceFactory.get_service("User")
+                song_service = ServiceFactory.get_service("Song")
                 spotify_token = user_service.get_spotify_token(user_id, token)
                 songs = recommendation_service.get_recommendations(token, spotify_token, traits)
                 logger.debug(f"Got song recommendations: {songs}")  
+                logger.debug(f"Adding new songs to db: {traits}")
+                song_service.add_songs(token, songs)
+                logger.debug(f"Added new songs to db: {traits}")
                 response_data = WebChat(
                     content=chat_message,
                     songs=songs
