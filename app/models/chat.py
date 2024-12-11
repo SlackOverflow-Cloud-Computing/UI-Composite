@@ -38,3 +38,4 @@ class ChatResponse(BaseModel):
 class WebChat(BaseModel):
     content: str
     songs: Optional[List[Song]]
+    chat_id: Optional[str]

@@ -72,12 +72,14 @@ async def general_chat(request: Request) -> WebChat:
                 logger.debug(f"Added new songs to db: {traits}")
                 response_data = WebChat(
                     content=chat_message,
-                    songs=songs
+                    songs=songs,
+                    chat_id=chat_id
                 )
             else:
                 response_data = WebChat(
                     content=chat_message,
-                    songs=None
+                    songs=None,
+                    chat_id=chat_id
                 )
             return response_data
         else:
