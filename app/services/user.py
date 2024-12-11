@@ -112,6 +112,23 @@ class UserService:
             playlists = self._get_playlists_from_service(user_id, token)
         return playlists
 
+    def create_playlist(self, token: str, user_id: str, name: str, song_ids: List[str]):
+
+        # Create Playlist in Spotify Adapter
+        try:
+            spotify_token = self.get_spotify_token(user_id, token)
+            payload = {
+                "token": spotify_token.model_dump(),
+                "name": name,
+                "song_ids": song_ids
+            }
+            print(f"Payload: {payload}")
+            response = self._make_request('POST', f"{self.spotify_url}/users/{user_id}/playlists", token, json=payload)
+
+        except Exception as e:
+            logging.error(f"Failed to create playlist: {e}")
+            raise e
+
     def get_spotify_token(self, user_id: str, token: str) -> Optional[SpotifyToken]:
         try:
             response = self._make_request('GET', f"{self.user_url}/users/{user_id}/spotify_token", token)

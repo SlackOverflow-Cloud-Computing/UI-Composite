@@ -1,10 +1,12 @@
 import logging
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 
-from app.models.user import User  # CourseSection
+from app.models.user import User
+from app.models.spotify_token import SpotifyToken
 from app.services.service_factory import ServiceFactory
 
 logger = logging.getLogger("uvicorn")
@@ -13,6 +15,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class LoginRequest(BaseModel):
     auth_code: str
+
+class CreatePlaylistRequest(BaseModel):
+    name: str
+    song_ids: List[str]
 
 @router.post("/auth/login", tags=["users"], status_code=status.HTTP_201_CREATED)
 async def login(request: LoginRequest):
@@ -101,4 +107,26 @@ async def get_user_playlists(user_id: str, token: str = Depends(oauth2_scheme)):
         # raise nested exception instead of generic 500
         if isinstance(e, HTTPException):
             raise e
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/users/{user_id}/playlists", tags=["users"])
+async def create_playlist(user_id: str, request: CreatePlaylistRequest, token: str = Depends(oauth2_scheme)):
+    """Create a Playlist for a User
+
+    Creates a playlist in the user's Spotify account.
+    Requires a valid JWT.
+    """
+
+    logger.info(f"Incoming Request - Method: POST, Path: /users/{user_id}/playlists")
+    user_service = ServiceFactory.get_service("User")
+    if not user_service.validate_token(token=token, id=user_id, scope=("/users/{user_id}/playlists", "POST")):
+        raise HTTPException(status_code=401, detail="Invalid Token")
+
+    try:
+        # Create a playlist in Spotify
+        user_service.create_playlist(token, user_id, request.name, request.song_ids)
+        logger.info(f"Response - Method: POST, Path: /users/{user_id}/playlists, Status: 200, Body: {request}")
+
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
