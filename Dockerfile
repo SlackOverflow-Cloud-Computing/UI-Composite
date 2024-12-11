@@ -19,7 +19,7 @@ COPY . /app/.
 
 # Expose/publish port 5002 for the container.
 #
-EXPOSE 8002
+EXPOSE 8006
 
 # Look in the code. This is an environment variable
 # passed to the application.
@@ -27,5 +27,5 @@ EXPOSE 8002
 ENV WHEREAMI=DOCKER
 
 # Run the app.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8006"]
 

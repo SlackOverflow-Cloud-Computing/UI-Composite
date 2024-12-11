@@ -1,10 +1,9 @@
 import logging
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, HTTPException, Query, Request, status, Depends
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
 from typing import Optional, List
 
-from app.models.playlist import Playlist, PlaylistContent, PlaylistInfo
+from app.models.playlist import PlaylistContent, PlaylistInfo
 from app.services.service_factory import ServiceFactory
 
 logger = logging.getLogger("uvicorn")
@@ -20,7 +19,7 @@ async def login_for_access_token(
     return {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGV4cmFjYXBlIiwiaWF0IjoxNzMzNjg5NjI2LCJzY29wZXMiOnsiL2F1dGgvbG9naW4iOlsiUE9TVCJdLCIvdXNlcnMve3VzZXJfaWR9L3BsYXlsaXN0cyI6WyJHRVQiXSwiL3VzZXJzL3t1c2VyX2lkfSI6WyJHRVQiLCJQVVQiXSwiL3VzZXJzL3t1c2VyX2lkfS9zcG90aWZ5X3Rva2VuIjpbIkdFVCJdLCIvcGxheWxpc3RzL3twbGF5bGlzdF9pZH0iOlsiR0VUIiwiUE9TVCIsIkRFTEVURSJdLCIvcGxheWxpc3RzL3twbGF5bGlzdF9pZH0vdHJhY2tzL3t0cmFja19pZH0iOlsiREVMRVRFIl0sIi9yZWNvbW1lbmRhdGlvbnMiOlsiR0VUIl0sIi9yZWNvbW1lbmRhdGlvbnMvcGxheWxpc3QiOlsiR0VUIl19fQ.SuQq7SVDOazCaJcZE_cUrzLTvDc4nr6xtj8xA1sEplI", "token_type": "bearer"}
 
 
-#@router.get("/users/{user_id}/playlists", tags=["playlists"], status_code=status.HTTP_200_OK)
+@router.get("/users/{user_id}/playlists", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(False), token: str = Depends(oauth2_scheme)) -> List[PlaylistInfo]:
     """ Get user's playlists from our database; if no data, get from Spotify API"""
 
@@ -76,7 +75,11 @@ async def get_playlist(playlist_id: str, token: str = Depends(oauth2_scheme)) ->
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
-async def update_playlist(playlist_id: str, playlist_info: PlaylistInfo, playlist_content: PlaylistContent, token: str = Depends(oauth2_scheme)):
+async def update_playlist(playlist_id: str, request: Request):
+    data = await request.json()
+    playlist_info = data.get("playlist_info")
+    playlist_content = data.get("playlist_content")
+    token = data.get("token")
     logger.info(f"Incoming Request - Method: POST, Path: /playlist/{playlist_id}")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/playlist/{playlist_id}", "POST")):

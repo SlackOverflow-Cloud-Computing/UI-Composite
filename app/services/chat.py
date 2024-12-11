@@ -1,8 +1,7 @@
 import requests
 import logging
 from typing import List, Optional
-import os
-import dotenv
+import os, dotenv
 
 import jwt
 from requests import Response, RequestException
