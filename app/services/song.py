@@ -35,22 +35,23 @@ class SongService:
         except jwt.exceptions.InvalidTokenError:
             return False
 
-    def add_songs(self, token: str, song: List[Song]):
+    def add_songs(self, token: str, song: List[Song], cid: str):
         try:
-            response = self._make_request(token, "POST", f"{self.song_url}/songs", json=[s.model_dump() for s in song])
+            response = self._make_request(token, "POST", f"{self.song_url}/songs", cid, json=[s.model_dump() for s in song])
             return response.json()
         except RequestException as e:
-            logging.error(f"Failed to put song {song}: {e}")
+            logging.error(f"Failed to put song {song}: {e} - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
-    def _make_request(self, token: str, method: str, url: str, **kwargs) -> Response:
+    def _make_request(self, token: str, method: str, url: str, cid: str, **kwargs) -> Response:
         try:
             # Add the JWT to the request headers
             headers = kwargs.get('headers', {})
             headers['Authorization'] = f"Bearer {token}"
+            headers['X-Correlation-ID'] = cid
             kwargs['headers'] = headers
 
             response = requests.request(method, url, **kwargs)
@@ -58,5 +59,5 @@ class SongService:
             return response
 
         except RequestException as e:
-            logging.error(f"HTTP {method} request to {url} failed: {e}")
+            logging.error(f"HTTP {method} request to {url} failed: {e} - [{cid}]")
             raise HTTPException(status_code=e.response.status_code, detail=e.response.text)

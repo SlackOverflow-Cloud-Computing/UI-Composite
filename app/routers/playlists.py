@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Query, Request, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Optional, List
+import uuid
 
 from app.models.playlist import PlaylistContent, PlaylistInfo
 from app.services.service_factory import ServiceFactory
@@ -22,8 +23,9 @@ async def login_for_access_token(
 @router.get("/users/{user_id}/playlists", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(False), token: str = Depends(oauth2_scheme)) -> List[PlaylistInfo]:
     """ Get user's playlists from our database; if no data, get from Spotify API"""
-
-    logger.info(f"Incoming Request - Method: GET, Path: /playlists/{user_id}")
+    
+    cid = str(uuid.uuid4())
+    logger.info(f"Incoming Request - Method: GET, Path: /playlists/{user_id} - [{cid}]")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/users/{user_id}/playlists", "GET")):
         raise HTTPException(status_code=401, detail="Invalid Token")
@@ -33,13 +35,13 @@ async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(Fal
 
     try:
         # Get details from playlist database, if no data, get from spotify
-        playlists = playlist_service.get_playlists(user_id, token)
-        logger.debug(f"Playlist info received")
+        playlists = playlist_service.get_playlists(user_id, token, cid)
+        logger.debug(f"Playlist info received - [{cid}]")
         if not playlists:
             # TODO: get from spotify
             # playlists = playlist_service.get_playlist_spotify()
             if not playlists:
-                logger.error(f"Failed to get playlist info for user {user_id}")
+                logger.error(f"Failed to get playlist info for user {user_id} - [{cid}]")
                 raise HTTPException(status_code=400, detail="Spotify Login Failed")
 
         return playlists
@@ -53,18 +55,19 @@ async def get_playlists(user_id: str, include_tracks: Optional[bool] = Query(Fal
 @router.get("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def get_playlist(playlist_id: str, token: str = Depends(oauth2_scheme)) -> PlaylistInfo:
     """ Get a playlist by playlist_id, return the playlist info"""
-
-    logger.info(f"Incoming Request - Method: GET, Path: /playlist/{playlist_id}")
+    
+    cid = str(uuid.uuid4())
+    logger.info(f"Incoming Request - Method: GET, Path: /playlist/{playlist_id} - [{cid}]")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/playlist/{playlist_id}", "GET")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
         # Get details from playlist database, if no data, get from spotify
-        playlist = playlist_service.get_playlist(playlist_id, token)
-        logger.debug(f"Playlist info received")
+        playlist = playlist_service.get_playlist(playlist_id, token, cid)
+        logger.debug(f"Playlist info received - [{cid}]")
         if not playlist:
-            logger.error(f"Failed to get playlist info of  {playlist_id}")
+            logger.error(f"Failed to get playlist info of {playlist_id} - [{cid}]")
             raise HTTPException(status_code=400, detail=f"Could not get this playlist {playlist_id}")
         return playlist
 
@@ -76,20 +79,21 @@ async def get_playlist(playlist_id: str, token: str = Depends(oauth2_scheme)) ->
 
 @router.post("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_202_ACCEPTED)
 async def update_playlist(playlist_id: str, request: Request):
+    cid = str(uuid.uuid4())
     data = await request.json()
     playlist_info = data.get("playlist_info")
     playlist_content = data.get("playlist_content")
     token = data.get("token")
-    logger.info(f"Incoming Request - Method: POST, Path: /playlist/{playlist_id}")
+    logger.info(f"Incoming Request - Method: POST, Path: /playlist/{playlist_id} - [{cid}]")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/playlist/{playlist_id}", "POST")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
-        message = playlist_service.update_playlist(playlist_id, playlist_info, playlist_content, token)
-        logger.debug(f"Playlist info and content received")
+        message = playlist_service.update_playlist(playlist_id, playlist_info, playlist_content, token, cid)
+        logger.debug(f"Playlist info and content received - [{cid}]")
         if not message:
-            logger.error(f"Failed to update playlist info for {playlist_id}")
+            logger.error(f"Failed to update playlist info for {playlist_id} - [{cid}]")
             raise HTTPException(status_code=400, detail=f"Could not update playlist info for {playlist_id}")
         return message
 
@@ -101,16 +105,17 @@ async def update_playlist(playlist_id: str, request: Request):
 
 @router.delete("/playlists/{playlist_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def delete_playlist(playlist_id: str, token: str = Depends(oauth2_scheme)):
-    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id}")
+    cid = str(uuid.uuid4())
+    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id} - [{cid}]")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/playlist/{playlist_id}", "DELETE")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
-        message = playlist_service.delete_playlist(playlist_id, token)
-        logger.debug(f"Playlist id received")
+        message = playlist_service.delete_playlist(playlist_id, token, cid)
+        logger.debug(f"Playlist id received - [{cid}]")
         if not message:
-            logger.error(f"Failed to delete playlist info for {playlist_id}")
+            logger.error(f"Failed to delete playlist info for {playlist_id} - [{cid}]")
             raise HTTPException(status_code=400, detail=f"Could not delete playlist info for {playlist_id}")
         return message
 
@@ -123,16 +128,17 @@ async def delete_playlist(playlist_id: str, token: str = Depends(oauth2_scheme))
 
 @router.delete("/playlists/{playlist_id}/tracks/{track_id}", tags=["playlists"], status_code=status.HTTP_200_OK)
 async def delete_song(playlist_id: str, track_id: str, token: str = Depends(oauth2_scheme)):
-    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id}")
+    cid = str(uuid.uuid4())
+    logger.info(f"Incoming Request - Method: DELETE, Path: /playlist/{playlist_id} - [{cid}]")
     playlist_service = ServiceFactory.get_service("Playlist")
     if not playlist_service.validate_token(token, scope=("/playlist/{playlist_id}/tracks/{track_id}", "DELETE")):
         raise HTTPException(status_code=401, detail="Invalid Token")
 
     try:
-        message = playlist_service.delete_song(playlist_id, track_id, token)
-        logger.debug(f"Playlist id and Track id received")
+        message = playlist_service.delete_song(playlist_id, track_id, token, cid)
+        logger.debug(f"Playlist id and Track id received - [{cid}]")
         if not message:
-            logger.error(f"Failed to delete song info for {playlist_id}")
+            logger.error(f"Failed to delete song info for {playlist_id} - [{cid}]")
             raise HTTPException(status_code=400, detail=f"Could not delete song info for {playlist_id}")
         return message
     except Exception as e:

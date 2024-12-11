@@ -36,68 +36,73 @@ class ChatService:
         except jwt.InvalidTokenError:
             return False
 
-    def update_chat_database(self, chat_data: ChatData) -> str:
+    def update_chat_database(self, chat_data: ChatData, cid: str) -> str:
         try:
-            logging.info(f"Updating chat database with data: {chat_data.model_dump()}")
-            logging.info(f"Chat URL: {self.chat_url}")
-            response = self._make_request("POST", f"{self.chat_url}/update_chat", json=chat_data.model_dump())
+            logging.info(f"Updating chat database with data: {chat_data.model_dump()} - [{cid}]")
+            logging.info(f"Chat URL: {self.chat_url} - [{cid}]")
+            response = self._make_request("POST", f"{self.chat_url}/update_chat", cid, json=chat_data.model_dump())
             return response.text
         except RequestException as e:
-            logging.error(f"Failed to get update the message to database: {e}")
+            logging.error(f"Failed to get update the message to database: {e} - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
-    def general_chat(self, query: str, user_id: str, chat_id: Optional[str]) -> ChatResponse:
+    def general_chat(self, query: str, user_id: str, chat_id: str, cid: str) -> ChatResponse:
         try:
             response = self._make_request("POST",
                                           f"{self.chat_url}/general_chat",
+                                          cid,
                                           params={"user_id": user_id, "chat_id": chat_id, "query": query}
                                           )
             response = ChatResponse.parse_obj(response.json())
             return response
         except RequestException as e:
-            logging.error(f"Failed to generate chat response")
+            logging.error(f"Failed to generate chat response - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
 
-    def extract_song_traits(self, query: Message) -> Traits:
+    def extract_song_traits(self, query: Message, cid: str) -> Traits:
         try:
-            response = self._make_request("POST", f"{self.chat_url}/extract_traits", json=query.model_dump())
+            response = self._make_request("POST", f"{self.chat_url}/extract_traits", cid, json=query.model_dump())
             traits = Traits.parse_obj(response.json())
             return traits
         except RequestException as e:
-            logging.error(f"Failed to get song traits from query {query}: {e}")
+            logging.error(f"Failed to get song traits from query {query}: {e} - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
-    def analyze_preference(self, user_id: str, chat_id: Optional[str]) -> str:
+    def analyze_preference(self, user_id: str, chat_id: str, cid: str) -> str:
         try:
             response = self._make_request("POST",
-                                          f"{self.chat_url}/analyze_preference",
+                                          f"{self.chat_url}/analyze_preference", cid,
                                           params={"user_id": user_id, "chat_id": chat_id}
                                           )
             # print(f"agent response: {response}")
             return response.text
         except RequestException as e:
-            logging.error(f"Failed to analyze preference for current user")
+            logging.error(f"Failed to analyze preference for current user - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
-    def _make_request(self, method: str, url: str, **kwargs) -> Response:
+    def _make_request(self, method: str, url: str, cid: str, **kwargs) -> Response:
         try:
+            headers = kwargs.get('headers', {})
+            headers['X-Correlation-ID'] = cid
+            kwargs['headers'] = headers
+            
             response = requests.request(method, url, **kwargs)
             response.raise_for_status()
             return response
         except RequestException as e:
-            logging.error(f"HTTP {method} request to {url} failed: {e}")
+            logging.error(f"HTTP {method} request to {url} failed: {e} - [{cid}]")
             raise HTTPException(status_code=e.response.status_code, detail=e.response.text)

@@ -21,6 +21,7 @@ class RecommendationRequest(BaseModel):
 @router.post("/chats", tags=["chats"], status_code=status.HTTP_200_OK)
 async def general_chat(request: Request) -> WebChat:
     """Process the general chat and give the recommendation when needed"""
+    cid = str(uuid.uuid4())
     data = await request.json()
     user_id = data.get("user_id")
     chat_id = data.get("chat_id")
@@ -30,7 +31,7 @@ async def general_chat(request: Request) -> WebChat:
     if chat_id is None:
         chat_id = str(uuid.uuid4())
 
-    logger.info(f"Incoming Request - Method: POST, Path: /chats")
+    logger.info(f"Incoming Request - Method: POST, Path: /chats - [{cid}]")
     chat_service = ServiceFactory.get_service("Chat")
     chat_data = ChatData(
         content=query,
@@ -45,8 +46,8 @@ async def general_chat(request: Request) -> WebChat:
 
     try:
         # Get natural language response and optionally traits
-        chat_service.update_chat_database(chat_data)
-        agent_response = chat_service.general_chat(query=query, user_id=user_id, chat_id=chat_id)
+        chat_service.update_chat_database(chat_data, cid)
+        agent_response = chat_service.general_chat(query=query, user_id=user_id, chat_id=chat_id, cid=cid)
         if agent_response:
             chat_message = agent_response.content
             chat_data = ChatData(
@@ -56,20 +57,20 @@ async def general_chat(request: Request) -> WebChat:
                 chat_id=chat_id,
                 user_id=user_id
             )
-            chat_service.update_chat_database(chat_data)
+            chat_service.update_chat_database(chat_data, cid)
             if agent_response.traits:
                 # traits = chat_service.extract_song_traits(agent_response.traits)
                 traits = agent_response.traits
-                logger.debug(f"Got song traits: {traits}")
+                logger.debug(f"Got song traits: {traits} - [{cid}]")
                 recommendation_service = ServiceFactory.get_service("Recommendation")
                 user_service = ServiceFactory.get_service("User")
                 song_service = ServiceFactory.get_service("Song")
-                spotify_token = user_service.get_spotify_token(user_id, token)
-                songs = recommendation_service.get_recommendations(token, spotify_token, traits)
-                logger.debug(f"Got song recommendations: {songs}")  
-                logger.debug(f"Adding new songs to db: {traits}")
-                song_service.add_songs(token, songs)
-                logger.debug(f"Added new songs to db: {traits}")
+                spotify_token = user_service.get_spotify_token(user_id, token, cid)
+                songs = recommendation_service.get_recommendations(token, spotify_token, traits, cid)
+                logger.debug(f"Got song recommendations: {songs} - [{cid}]")  
+                logger.debug(f"Adding new songs to db: {traits} - [{cid}]")
+                song_service.add_songs(token, songs, cid)
+                logger.debug(f"Added new songs to db: {traits} - [{cid}]")
                 response_data = WebChat(
                     content=chat_message,
                     songs=songs,
@@ -103,7 +104,8 @@ async def query_to_recommendations(
     token: str = Depends(oauth2_scheme),
 ) -> List[Song]:
     """Given a user query, return recommended songs"""
-    logger.info("Incoming Request - Method: POST, Path: /recommendations")
+    cid = str(uuid.uuid4())
+    logger.info(f"Incoming Request - Method: POST, Path: /recommendations - [{cid}]")
     chat_service = ServiceFactory.get_service("Chat")
     recommendation_service = ServiceFactory.get_service("Recommendation")
 
@@ -113,7 +115,7 @@ async def query_to_recommendations(
         "agent_name": "Recommendation"
     })
 
-    logger.info(f"Incoming Request - Method: GET, Path: /recommendations")
+    logger.info(f"Incoming Request - Method: GET, Path: /recommendations - [{cid}]")
     chat_service = ServiceFactory.get_service("Chat")
     recommendation_service = ServiceFactory.get_service("Recommendation")
     # query = Message(query=query)
@@ -124,14 +126,14 @@ async def query_to_recommendations(
     )
 
     try:
-        chat_service.update_chat_database(chat_data)  # Store to database
-        result = chat_service.extract_song_traits(query)
-        logger.debug(f"Got song traits: {result}")
+        chat_service.update_chat_database(chat_data, cid)  # Store to database
+        result = chat_service.extract_song_traits(query, cid)
+        logger.debug(f"Got song traits: {result} - [{cid}]")
 
         user_service = ServiceFactory.get_service("User")
-        spotify_token = user_service.get_spotify_token(user_id, token)
-        result = recommendation_service.get_recommendations(token, spotify_token, result)
-        logger.debug(f"Got song recommendations: {result}")
+        spotify_token = user_service.get_spotify_token(user_id, token, cid)
+        result = recommendation_service.get_recommendations(token, spotify_token, result, cid)
+        logger.debug(f"Got song recommendations: {result} - [{cid}]")
         return result
     except Exception as e:
 
@@ -148,17 +150,18 @@ async def playlist_to_recommendations(
     token: str = Depends(oauth2_scheme)
 ) -> List[Song]:
     """Given a list of song ids, return recommended songs"""
+    cid = str(uuid.uuid4())
 
-    logger.info(f"Incoming Request - Method: GET, Path: /recommendations/playlist")
+    logger.info(f"Incoming Request - Method: GET, Path: /recommendations/playlist - [{cid}]")
 
     recommendation_service = ServiceFactory.get_service("Recommendation")
     traits = Traits(seed_tracks=song_ids)
 
     try:
         user_service = ServiceFactory.get_service("User")
-        spotify_token = user_service.get_spotify_token(user_id, token)
-        result = recommendation_service.get_recommendations(token, spotify_token, result)
-        logger.debug(f"Got song recommendations: {result}")
+        spotify_token = user_service.get_spotify_token(user_id, token, cid)
+        result = recommendation_service.get_recommendations(token, spotify_token, result, cid)
+        logger.debug(f"Got song recommendations: {result} - [{cid}]")
         return result
     except Exception as e:
         if isinstance(e, HTTPException):  # Return any error specified in the chat service
@@ -170,18 +173,19 @@ async def playlist_to_recommendations(
 @router.get("/user_preference", tags=["preference"], status_code=status.HTTP_200_OK)
 async def get_user_preference(user_id: str, chat_id: Optional[str] = None) -> str:
     """Return user preference analysis from user's chat history"""
+    cid = str(uuid.uuid4())
 
-    logger.info(f"Incoming Request - Method: GET, Path: /user_preference")
+    logger.info(f"Incoming Request - Method: GET, Path: /user_preference - [{cid}]")
     chat_service = ServiceFactory.get_service("Chat")
 
     try:
-        result = chat_service.analyze_preference(user_id=user_id, chat_id=chat_id)
+        result = chat_service.analyze_preference(user_id=user_id, chat_id=chat_id, cid=cid)
         chat_data = ChatData(
             content=result,
             role="ai",
             agent_name="Preference"
         )
-        chat_service.update_chat_database(chat_data)  # Store to database
+        chat_service.update_chat_database(chat_data, cid)  # Store to database
         return result
     except Exception as e:
         if isinstance(e, HTTPException):  # Return any error specified in the chat service

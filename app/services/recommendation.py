@@ -15,31 +15,32 @@ class RecommendationService:
     def __init__(self, spotify_adapter_url: str):
         self.spotify_adapter_url = spotify_adapter_url
 
-    def get_recommendations(self, token: str, spotify_token: SpotifyToken, traits: Traits) -> List[Song]:
+    def get_recommendations(self, token: str, spotify_token: SpotifyToken, traits: Traits, cid: str) -> List[Song]:
         params = traits.model_dump()
         params["token"] = token
         params["spotify_access_token"] = spotify_token.access_token
         try:
-            response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", params=params)
+            response = self._make_request(token, "GET", f"{self.spotify_adapter_url}/recommendations", cid, params=params)
             songs = [Song.parse_obj(song) for song in response.json()]
             return songs
         except RequestException as e:
-            logging.error(f"Failed to get song recommendations from traits {params}: {e}")
+            logging.error(f"Failed to get song recommendations from traits {params}: {e} - [{cid}]")
             # raise nested exception instead of generic 500
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=str(e))
 
-    def _make_request(self, token: str, method: str, url: str, **kwargs) -> Response:
+    def _make_request(self, token: str, method: str, url: str, cid: str, **kwargs) -> Response:
         try:
             # Add the JWT to the request headers
             headers = kwargs.get('headers', {})
             headers['Authorization'] = f"Bearer {token}"
+            headers['X-Correlation-ID'] = cid
             kwargs['headers'] = headers
 
             response = requests.request(method, url, **kwargs)
             response.raise_for_status()
             return response
         except RequestException as e:
-            logging.error(f"HTTP {method} request to {url} failed: {e}")
+            logging.error(f"HTTP {method} request to {url} failed: {e} - [{cid}]")
             raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
