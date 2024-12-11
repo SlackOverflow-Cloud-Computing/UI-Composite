@@ -2,6 +2,7 @@ import requests
 import logging
 from typing import List, Optional
 import os
+import dotenv
 
 import jwt
 from requests import Response, RequestException
@@ -10,6 +11,7 @@ from fastapi import HTTPException
 from app.models.chat import Message, ChatData, ChatResponse
 from app.models.song import Traits
 
+dotenv.load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 class ChatService:
