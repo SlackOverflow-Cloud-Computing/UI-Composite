@@ -9,9 +9,11 @@ from app.routers import recommendations
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000" # React UI
-]
+# origins = [
+#     "http://localhost:3000" # React UI
+# ]
+
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
